@@ -183,6 +183,7 @@ def testModel(model, x, c, *, batchSize=None, filePathLst=None, doMC=False, outM
         model = model.cuda()
 
     model.train(mode=False)
+    torch.set_grad_enabled(False)
     if hasattr(model, 'ctRm'):
         if model.ctRm is True:
             nt = nt - model.ct
