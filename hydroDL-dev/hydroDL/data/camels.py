@@ -146,12 +146,13 @@ def readAttrAll(*, saveDict=False):
         nGage = len(gageDict['id'])
         outTemp = np.full([nGage, len(varLstTemp)], np.nan)
         for field in varLstTemp:
-            if is_string_dtype(dataTemp[field]):
+            if is_numeric_dtype(dataTemp[field]):
+                outTemp[:, k] = dataTemp[field].values
+            else:
                 value, ref = pd.factorize(dataTemp[field], sort=True)
                 outTemp[:, k] = value
                 fDict[field] = ref.tolist()
-            elif is_numeric_dtype(dataTemp[field]):
-                outTemp[:, k] = dataTemp[field].values
+            
             k = k + 1
         outLst.append(outTemp)
     out = np.concatenate(outLst, 1)
