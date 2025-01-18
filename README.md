@@ -1,3 +1,8 @@
+# 𝛿MG
+### Our upgraded framework
+While dPLHBVrelease is still functional, 𝛿MG is our new generic differentiable modeling framework. Everything is much more streamlined and unified. It is recommended new users get started on 𝛿MG. 
+https://mhpi.github.io/codes/frameworks/
+
 # differentiable parameter learning (dPL) + HBV hydrologic model
 ### Code release created by Dapeng Feng
 This release contains the codes to train models with differentiable parameter learning (dPL) applied to HBV backbone 
