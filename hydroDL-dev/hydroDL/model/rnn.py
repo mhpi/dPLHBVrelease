@@ -8,7 +8,7 @@ from . import cnn
 import csv
 import numpy as np
 import random
-
+import importlib
 
 class LSTMcell_untied(torch.nn.Module):
     def __init__(self,
@@ -1780,6 +1780,7 @@ class HBVMulTDET(torch.nn.Module):
             return Qall
 
 
+
 class MultiInv_HBVTDModel(torch.nn.Module):
     # class for dPL + HBV with multiple components and some dynamic parameters
     def __init__(self, *, ninv, nfea, nmul, hiddeninv, drinv=0.5, inittime=0, routOpt=False, comprout=False,
@@ -1848,3 +1849,81 @@ class MultiInv_HBVTDModel(torch.nn.Module):
         out = self.HBV(x, parameters=hbvpara, staind=self.staind, tdlst=self.tdlst, mu=self.nmul, muwts=wts, rtwts=routpara,
                           bufftime=self.inittime, routOpt=self.routOpt, comprout=self.comprout, dydrop=self.dydrop)
         return out
+
+
+
+class dHBVModel(torch.nn.Module):
+    # class for dPL + HBV with multiple components and some dynamic parameters for both dHBV1.0 and dHBV1.1p
+    def __init__(self, *, ninv, nfea, nmul, hiddeninv, drinv=0.5, inittime=0, routOpt=False, comprout=False,
+                 compwts=False, staind=-1, tdlst=[], dydrop=0.0, ETMod=False, model_name = 'HBV1_0'):
+        # LSTM Inv + HBV Forward
+        super(dHBVModel, self).__init__()
+        package_name = "hydroDL.model.HydroModels"
+        model_import_string = f"{package_name}.{model_name}"
+
+        try:
+            PBMmodel = getattr(importlib.import_module(model_import_string), 'HBV')
+        except ImportError:
+            print(f"Failed to import {model_import_string} from {model_name}")
+
+
+        self.ninv = ninv
+        self.nfea = nfea
+        self.hiddeninv = hiddeninv
+        self.nmul = nmul
+        # get the total number of parameters
+        nhbvpm = nfea*nmul
+        if comprout is False:
+            nroutpm = 2
+        else:
+            nroutpm = nmul*2
+        if compwts is False:
+            nwtspm = 0
+        else:
+            nwtspm = nmul
+        ntp = nhbvpm + nroutpm + nwtspm
+        # ntp = nfea*nmul+nmul+2
+        # ntp = nfea * nmul + 2
+        self.lstminv = CudnnLstmModel(
+            nx=ninv, ny=ntp, hiddenSize=hiddeninv, dr=drinv)
+
+
+        self.HBV = PBMmodel()
+
+
+
+        self.inittime=inittime
+        self.routOpt=routOpt
+        self.comprout=comprout
+        self.nhbvpm = nhbvpm
+        self.nwtspm = nwtspm
+        self.nroutpm = nroutpm
+        self.staind = staind
+        self.tdlst = tdlst
+        self.dydrop = dydrop
+
+
+    def forward(self, x, z, doDropMC=False):
+        Params0 = self.lstminv(z) # dim: Time, Gage, Para
+        ntstep = Params0.shape[0]
+        ngage = Params0.shape[1]
+        # print(Params0)
+        hbvpara0 = Params0[:, :, 0:self.nhbvpm]
+        # hbvpara = torch.clamp(hbvpara0, min=0.0, max=1.0).view(ngage, self.nfea, self.nmul)
+        hbvpara = torch.sigmoid(hbvpara0).view(ntstep, ngage, self.nfea, self.nmul) # hbv scaled para, [0,1]
+        routpara0 = Params0[-1, :, self.nhbvpm:self.nhbvpm+self.nroutpm] # routing para dim:[Ngage, nmul*2] or [Ngage, 2]
+        if self.comprout is False:
+            # routpara = torch.clamp(routpara0, min=0.0, max=1.0)
+            routpara = torch.sigmoid(routpara0) # [0,1]
+        else:
+            # routpara = torch.clamp(routpara0, min=0.0, max=1.0).view(ngage*self.nmul, 2) # first dim:gage*component
+            routpara = torch.sigmoid(routpara0).view(ngage * self.nmul, 2) # [0,1]
+        if self.nwtspm == 0: # simple average for multiple components
+            wts = None
+        else: # weighted average using learned weights
+            wtspara = Params0[-1, :, -self.nwtspm:]
+            wts = F.softmax(wtspara, dim=-1)  # softmax to make sure sum to 1
+        out = self.HBV(x, parameters=hbvpara, staind=self.staind, tdlst=self.tdlst, mu=self.nmul, muwts=wts, rtwts=routpara,
+                          bufftime=self.inittime, routOpt=self.routOpt, comprout=self.comprout, dydrop=self.dydrop)
+        return out
+

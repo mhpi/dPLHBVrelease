@@ -231,6 +231,7 @@ class NSELosstest(torch.nn.Module):
         loss = losssum/nsample
         return loss
 
+
 class NSELossBatch(torch.nn.Module):
     # Same as Fredrick 2019, batch NSE loss
     # stdarray: the standard deviation of the runoff for all basins
@@ -241,7 +242,7 @@ class NSELossBatch(torch.nn.Module):
 
     def forward(self, output, target, igrid):
         nt = target.shape[0]
-        stdse = np.tile(self.std[igrid], (nt, 1))
+        stdse = np.tile(self.std[igrid].T, (nt, 1))
         stdbatch = torch.tensor(stdse, requires_grad=False).float().cuda()
         p0 = output[:, :, 0]   # dim: Time*Gage
         t0 = target[:, :, 0]
@@ -259,6 +260,7 @@ class NSELossBatch(torch.nn.Module):
         # loss = torch.mean(normRes[mask])
         return loss
 
+
 class NSESqrtLossBatch(torch.nn.Module):
     # Same as Fredrick 2019, batch NSE loss, use RMSE and STD instead
     # stdarray: the standard deviation of the runoff for all basins
@@ -269,7 +271,7 @@ class NSESqrtLossBatch(torch.nn.Module):
 
     def forward(self, output, target, igrid):
         nt = target.shape[0]
-        stdse = np.tile(self.std[igrid], (nt, 1))
+        stdse = np.tile(self.std[igrid].T, (nt, 1))
         stdbatch = torch.tensor(stdse, requires_grad=False).float().cuda()
         p0 = output[:, :, 0]   # dim: Time*Gage
         t0 = target[:, :, 0]

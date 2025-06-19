@@ -68,9 +68,9 @@ def trainModel(model,
                 yP, Param_R2P = model(xTrain)
             if type(model) in [rnn.LstmCloseModel, rnn.AnnCloseModel, rnn.CNN1dLSTMmodel, rnn.CNN1dLSTMInmodel,
                                rnn.CNN1dLCmodel, rnn.CNN1dLCInmodel, rnn.CudnnInvLstmModel,
-                               rnn.MultiInv_HBVModel, rnn.MultiInv_HBVTDModel]:
+                               rnn.MultiInv_HBVModel, rnn.MultiInv_HBVTDModel,rnn.dHBVModel]:
                 iGrid, iT = randomIndex(ngrid, nt, [batchSize, rho], bufftime=bufftime)
-                if type(model) in [rnn.MultiInv_HBVModel, rnn.MultiInv_HBVTDModel]:
+                if type(model) in [rnn.MultiInv_HBVModel, rnn.MultiInv_HBVTDModel,rnn.dHBVModel]:
                     xTrain = selectSubset(x, iGrid, iT, rho, bufftime=bufftime)
                 else:
                     xTrain = selectSubset(x, iGrid, iT, rho, c=c)
@@ -82,7 +82,7 @@ def trainModel(model,
                     zTrain = selectSubset(z, iGrid, iT=None, rho=None, LCopt=False, c=c) # Add the attributes to inv
                 elif type(model) in [rnn.MultiInv_HBVModel]:
                     zTrain = selectSubset(z, iGrid, iT, rho, c=c)
-                elif type(model) in [rnn.MultiInv_HBVTDModel]:
+                elif type(model) in [rnn.MultiInv_HBVTDModel,rnn.dHBVModel]:
                     zTrain = selectSubset(z, iGrid, iT, rho, c=c, bufftime=bufftime)
                 else:
                     zTrain = selectSubset(z, iGrid, iT, rho)
@@ -128,7 +128,7 @@ def trainModel(model,
             #     print('This is the error point')
             #     print('Debug start')
 
-            if iIter % 100 == 0:
+            if iIter % 1 == 0:
                 print('Iter {} of {}: Loss {:.3f}'.format(iIter, nIterEp, loss.item()))
         # print loss
         lossEp = lossEp / nIterEp
@@ -173,7 +173,7 @@ def testModel(model, x, c, *, batchSize=None, filePathLst=None, doMC=False, outM
     ngrid, nt, nx = x.shape
     if c is not None:
         nc = c.shape[-1]
-    if type(model) in [rnn.MultiInv_HBVModel, rnn.MultiInv_HBVTDModel]:
+    if type(model) in [rnn.MultiInv_HBVModel, rnn.MultiInv_HBVTDModel,rnn.dHBVModel]:
         ny=5 # streamflow
     else:
         ny = model.ny
@@ -247,7 +247,7 @@ def testModel(model, x, c, *, batchSize=None, filePathLst=None, doMC=False, outM
                 ySS = np.sqrt(ySS)/doMC
         if type(model) in [rnn.LstmCloseModel, rnn.AnnCloseModel, rnn.CNN1dLSTMmodel, rnn.CNN1dLSTMInmodel,
                            rnn.CNN1dLCmodel, rnn.CNN1dLCInmodel, rnn.CudnnInvLstmModel,
-                           rnn.MultiInv_HBVModel, rnn.MultiInv_HBVTDModel]:
+                           rnn.MultiInv_HBVModel, rnn.MultiInv_HBVTDModel,rnn.dHBVModel]:
             yP = model(xTest, zTest)
         if type(model) in [hydroDL.model.rnn.LstmCnnForcast]:
             yP = model(xTest, zTest)
