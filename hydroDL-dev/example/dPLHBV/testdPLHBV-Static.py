@@ -1,5 +1,7 @@
 import sys
-sys.path.append('../../')
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[2]   # go up 2 levels from this file
+sys.path.insert(0, str(ROOT))  
 from hydroDL import master, utils
 from hydroDL.data import camels
 from hydroDL.master import loadModel
@@ -64,10 +66,14 @@ testseed = 111111
 
 # Define root directory of database and saved output dir
 # Modify this based on your own location of CAMELS dataset and saved models
-rootDatabase = os.path.join(os.path.sep, 'scratch', 'Camels')  # CAMELS dataset root directory
+#rootDatabase = os.path.join(os.path.sep, 'scratch', 'Camels')  # CAMELS dataset root directory
+# e.g.
+rootDatabase = '/data/yxs275/DPL_HBV/' 
 camels.initcamels(rootDatabase)  # initialize three camels module-scope variables in camels.py: dirDB, gageDict, statDict
 
-rootOut = os.path.join(os.path.sep, 'data', 'rnnStreamflow')  # Model output root directory
+#rootOut = os.path.join(os.path.sep, 'data', 'rnnStreamflow')  # Model output root directory
+# e.g.
+rootOut = '/data/yxs275/DPL_HBV/output' 
 
 # CAMLES basin info
 gageinfo = camels.gageDict
@@ -302,7 +308,7 @@ for ifold in range(1, len(tarIDLst)+1):
     for k in range(len(filePathLst)):
         filePath = filePathLst[k]
         dataPred[:, :, k] = pd.read_csv(
-            filePath, dtype=np.float, header=None).values
+            filePath, dtype=np.float64, header=None).values
     # save the predictions to the big matrix
     predtestALL[nstart:nstart+nbasin, :, :] = dataPred
     obstestALL[nstart:nstart+nbasin, :, :] = obs
@@ -332,7 +338,8 @@ np.save(predFile, predtestALL)
 
 # calculate metrics for the widely used CAMELS subset with 531 basins
 # we report on this 531 subset in Feng et al., 2022 HESSD
-subsetPath = 'Sub531ID.txt'
+HERE = Path(__file__).resolve().parent                 # folder of this script
+subsetPath = HERE / "Sub531ID.txt" 
 with open(subsetPath, 'r') as fp:
     sub531IDLst = json.load(fp)  # Subset 531 ID List
 # get the evaluation metrics on 531 subset

@@ -1,5 +1,11 @@
 import sys
-sys.path.append('../../')
+from pathlib import Path
+ROOT = Path(__file__).resolve().parents[2]   # go up 2 levels from this file
+sys.path.insert(0, str(ROOT))  
+
+#if getting errors to import files, you can try to insert the path of 'hydroDL-dev':
+# sys.path.append('/dHBV1.1p/dPLHBVrelease/hydroDL-dev')
+
 from hydroDL import master, utils
 from hydroDL.data import camels
 from hydroDL.master import default
@@ -82,11 +88,15 @@ else:
 # 'your/path/to/Camels/basin_timeseries_v1p2_metForcing_obsFlow' and 'your/path/to/Camels/camels_attributes_v2.0'
 # Then 'rootDatabase' here should be 'your/path/to/Camels';
 # 'rootOut' is the root dir where you save the trained model
-rootDatabase = os.path.join(os.path.sep, 'scratch', 'Camels')  # CAMELS dataset root directory
+#rootDatabase = os.path.join(os.path.sep, 'scratch', 'Camels')  # CAMELS dataset root directory
+# e.g.
+rootDatabase = '/data/yxs275/DPL_HBV/'
+
 camels.initcamels(rootDatabase)  # initialize camels module-scope variables in camels.py (dirDB, gageDict) to read basin info
 
-rootOut = os.path.join(os.path.sep, 'data', 'rnnStreamflow')  # Model output root directory
-
+#rootOut = os.path.join(os.path.sep, 'data', 'rnnStreamflow')  # Model output root directory
+# e.g.
+rootOut = '/data/yxs275/DPL_HBV/test/output/'
 ## set up different data loadings for ALL, PUB, PUR
 testfoldInd = 1
 # Which fold to hold out for PUB (10 folds, from 1 to 10) and PUR (7 folds, from 1 to 7).

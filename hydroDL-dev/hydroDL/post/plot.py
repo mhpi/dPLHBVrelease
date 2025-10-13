@@ -39,7 +39,7 @@ def plotBoxFig(data,
         if type(temp) is list:
             for kk in range(len(temp)):
                 tt = temp[kk]
-                if tt is not None and tt != []:
+                if tt is not None and np.size(tt) > 0:
                     tt = tt[~np.isnan(tt)]
                     temp[kk] = tt
                 else:
